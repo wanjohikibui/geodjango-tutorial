@@ -1,0 +1,109 @@
+{% load leaflet_tags %}
+{% load static %}
+<html>
+    <head>
+        <title>Agricom Map Portal</title>
+        {% leaflet_js %}
+        {% leaflet_css %}
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/css/bootstrap.min.css">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+        <link rel="stylesheet" href="{% static 'leaflet-groupedlayercontrol/leaflet.groupedlayercontrol.css' %}">
+        <script src="{% static 'leaflet-groupedlayercontrol/leaflet.groupedlayercontrol.js' %}"></script>
+        <script src="{% static 'js/mousePosition.js' %}"></script>
+        
+    </head>
+    <body>
+        <div id="agrimap" style="height: 600px; width: 100%;"></div>
+    </body>
+<script>
+    
+
+    var map = L.map('agrimap', {
+        center: [-0.397783, 36.960936],
+        zoom: 6,
+    });
+    var osm = L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        });
+    var OpenTopoMap = L.tileLayer('http://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+        maxZoom: 17,
+        attribution: 'Map data: &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>, <a href="http://viewfinderpanoramas.org">SRTM</a> | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)'
+    });
+    osm.addTo(map);
+
+
+var incidences = L.geoJson(null, {
+  pointToLayer: function (feature, latlng) {
+    return L.marker(latlng, {
+      icon: L.icon({
+        iconUrl: "static/img/red.png",
+        iconSize: [28, 32],
+        iconAnchor: [12, 28],
+        popupAnchor: [0, -25]
+      }),
+      title: feature.properties.title,
+      riseOnHover: true
+    });
+  },
+  onEachFeature: function (feature, layer) {
+    if (feature.properties) {
+      var content = "<table class='table table-striped table-bordered table-condensed'>" + "<tr><th>Title</th><td>" + feature.properties.title + "</td></tr>" + "<tr><th>Date Reported</th><td>" + feature.properties.date_reported + "</td></tr>" + "<tr><th>Description</th><td>" + feature.properties.description + "</td></tr>" + "<table>";
+      layer.on({
+        click: function (e) {
+          layer.bindPopup(content).openPopup(e.latlng);
+        }
+      });
+    }
+  }
+
+}).addTo(map);
+
+var incidencesUrl = 'incidences';
+
+$.getJSON(incidencesUrl, function (data) {
+  incidences.addData(data);
+});
+
+// Loading County layer
+var counties = L.geoJson(null, {
+    style: function(feature){
+        value = feature.properties.codes;
+        if(value <= 25){
+            return {color: "#ff0000"};
+        }else if(value > 25){
+            return {color: "#00ffff"};
+        } 
+    },
+
+}).addTo(map);
+
+var countyUrl = 'county';
+
+$.getJSON(countyUrl, function (data) {
+  counties.addData(data);
+});
+
+var baseLayers = {
+  "Open Street Map": osm,
+  "Topo Map": OpenTopoMap
+};
+
+var groupedOverlays = {
+  "Point Data": {
+    "incidences": incidences,
+    
+  },
+  "Other": {
+    "Administrative Boundaries": counties,
+    
+  },
+  
+};
+
+L.control.groupedLayers(baseLayers, groupedOverlays).addTo(map);
+L.control.mousePosition({position: "topright",}).addTo(map);
+L.control.scale().addTo(map);
+
+</script>
+</html>
