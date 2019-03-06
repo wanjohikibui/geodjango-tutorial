@@ -6,7 +6,7 @@ A video version of the guide can be found on <a href="https://www.youtube.com/pl
 
 ## Clone the system
 ```
-git clone https://github.com/wanjohikibui/Geodjango-series.git
+git clone https://github.com/wanjohikibui/geodjango-tutorial.git
 ```
 
 ## Support
